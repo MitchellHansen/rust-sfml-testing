@@ -42,27 +42,18 @@ pub struct EntState<'a> {
 
 fn main() {
 
-    let loader = Loader::new();
 
+
+    let loader = Loader::new();
     let mut state = EntState {
         dynamic_entities: Rc::new(RefCell::new(Vec::new())),
-        static_entities : Rc::new(RefCell::new(Vec::new()))
+        static_entities: Rc::new(RefCell::new(Vec::new()))
     };
+    {
 
-    loader.read_static_entities(String::from("static_entities.txt"), &state);
-
-
-   state.dynamic_entities.borrow_mut().push(Sprite::new());
-
-//    sp.set_texture(&spritesheet_text, false);
-//    sp.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-//    sp.set_position((64.0, 64.0));
-
-    return;
-//    let mut block_sprite2 = Sprite::new();
-//    block_sprite2.set_texture(&spritesheet_text, false);
-//    block_sprite2.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-//    block_sprite2.set_position((128.0, 64.0));
+        let mut state_borrow = &state;
+        loader.read_static_entities(String::from("static_entities.txt"), state_borrow);
+    }
 
     let static_sprites: Vec<(&Sprite, AABB<f64>)> = vec![
 //        (
@@ -101,7 +92,7 @@ fn main() {
 //    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_stand.png"), &spritesheet_desc));
 
     let mut window = RenderWindow::new(
-        (500, 500),
+        (512, 512),
         "Custom drawable",
         Style::CLOSE,
         &Default::default(),
@@ -182,6 +173,11 @@ fn main() {
         window.clear(&Color::BLACK);
         window.draw(&player);
         window.draw(&collision_sprite);
+
+
+        for ent in state.static_entities.borrow().iter() {
+            window.draw(ent);
+        }
 
         if interferences.len() == 0 {
          //   window.draw(&block_sprite);

@@ -8,16 +8,16 @@ use std::io::BufRead;
 use sfml::graphics::Sprite;
 use sfml::graphics::Transformable;
 
-pub struct Loader<'a> {
+pub struct Loader {
 
     spritesheet_desc : HashMap<String, HashMap<String, i32>>,
     spritesheet_text : Texture
 
 }
 
-impl<'a> Loader<'a> {
+impl Loader {
 
-    pub fn new() -> Loader<'a> {
+    pub fn new() -> Loader {
         Loader{
             spritesheet_desc: util::read_spritesheet(String::from("spritesheet_complete.xml")),
             spritesheet_text: Texture::from_file("spritesheet_complete.png").expect("Couldn't load texture")
@@ -25,7 +25,7 @@ impl<'a> Loader<'a> {
     }
 
 
-    pub fn read_static_entities(&self, filename: String, entities: &EntState) {
+    pub fn read_static_entities<'a>(&'a self, filename: String, entities: &EntState<'a>) {
 
         let file = File::open(filename).expect("Could not open file");
 
@@ -50,27 +50,29 @@ impl<'a> Loader<'a> {
 
             } else {
 
-                y += 1;
                 x = 0;
 
                 let val = line.unwrap();
                 for i in val.split_whitespace() {
-
-                    x += 1;
                     match i.parse::<i32>().unwrap() {
                         0 => {
+                            // Do nothing for now
+                        }
+                        1 => {
                             let mut sprite = Sprite::new();
                             sprite.set_texture(&self.spritesheet_text, false);
                             sprite.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &self.spritesheet_desc));
                             sprite.set_position((x as f32 * w, y as f32 * h));
 
-                            entities.dynamic_entities.borrow_mut().push(sprite);
+                            entities.static_entities.borrow_mut().push(sprite);
                         }
                         _ => {
                             panic!("ahhhhhh");
                         }
                     }
+                    x += 1;
                 }
+                y += 1;
             }
         }
     }
