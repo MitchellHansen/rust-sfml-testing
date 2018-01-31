@@ -37,50 +37,61 @@ use ncollide2d::bounding_volume;
 
 pub struct EntState<'a> {
     dynamic_bvh     : Option<BVT<&'a Sprite<'a>, AABB<f64>>>,
-    dynamic_entities: Rc<RefCell<Vec< Sprite<'a> >>>,
+    dynamic_entities: Vec<RefCell< Sprite<'a> >>,
 
     static_bvh      : Option<BVT<&'a Sprite<'a>, AABB<f64>>>,
-    static_entities : Rc<RefCell<Vec< Sprite<'a> >>>,
+    static_entities : Vec<RefCell< Sprite<'a> >>,
     player          : Player<'a>,
 }
 
+impl<'a> EntState<'a> {
+
+    pub fn gen_bvt(&'a mut self) {
+
+        let mut dynamic_sprites: Vec<(&'a Sprite, AABB<f64>)> = Vec::new();
+        {
+            for i in self.dynamic_entities {
+                let bounds = i.borrow().global_bounds();
+                let pos = i.borrow().position();
+                let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+                                                        na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
+
+                dynamic_sprites.push((&i.borrow(), volume));
+            }
+        }
+        self.dynamic_bvh = Some(BVT::new_balanced(dynamic_sprites));
+
+//        let mut static_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
+//        {
+//            for i in self.static_entities {
+//                let bounds = i.local_bounds();
+//                let pos = i.position();
+//                let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+//                                                        na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
+//
+//                static_sprites.push((i, volume));
+//            }
+//        }
+//        self.static_bvh = Some(BVT::new_balanced(static_sprites));
+    }
+
+}
 
 fn main() {
-
     let loader = Loader::new();
     let mut state = EntState {
-        dynamic_bvh: None,
-        dynamic_entities: Rc::new(RefCell::new(Vec::new())),
-        static_bvh: None,
-        static_entities: Rc::new(RefCell::new(Vec::new())),
+        dynamic_bvh: Option::None,
+        dynamic_entities: Vec::new(),
+        static_bvh: Option::None,
+        static_entities: Vec::new(),
         player: Player::new(),
     };
 
-    loader.read_static_entities(String::from("static_entities.txt"), &state);
-    loader.read_dynamic_entities(String::from("dynamic_entities.txt"), &state);
+    loader.read_static_entities(String::from("static_entities.txt"), &mut state);
+    loader.read_dynamic_entities(String::from("dynamic_entities.txt"), &mut state);
 
-    let mut dynamic_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
-    let dyna = state.dynamic_entities.borrow();
-    for i in dyna.iter() {
-        let bounds = &i.local_bounds();
-        let pos    = &i.position();
-        let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-            na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
+    state.gen_bvt();
 
-        dynamic_sprites.push((i, volume));
-    }
-    state.dynamic_bvh = Some(BVT::new_balanced(dynamic_sprites));
-
-
-    let mut static_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
-    for i in state.static_entities.borrow_mut().iter() {
-        let bounds = &i.local_bounds();
-        let pos    = &i.position();
-        let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-                                                na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
-        static_sprites.push((i, volume));
-    }
-    state.static_bvh = Some(BVT::new_balanced(static_sprites));
 
     let mut window = RenderWindow::new(
         (512, 512),
@@ -161,13 +172,13 @@ fn main() {
         window.draw(&player);
         //window.draw(&collision_sprite);
 
-        for ent in state.static_entities.borrow().iter() {
-            window.draw(ent);
-        }
-
-        for ent in state.dynamic_entities.borrow().iter() {
-            window.draw(ent);
-        }
+//        for ent in state.static_entities.get_mut().iter() {
+//            window.draw(ent);
+//        }
+//
+//        for ent in state.dynamic_entities.get_mut().iter() {
+//            window.draw(ent);
+//        }
 
         window.display();
 

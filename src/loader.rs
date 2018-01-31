@@ -7,6 +7,7 @@ use std::io::BufReader;
 use std::io::BufRead;
 use sfml::graphics::Sprite;
 use sfml::graphics::Transformable;
+use std::cell::RefCell;
 
 pub struct Loader {
 
@@ -24,7 +25,7 @@ impl Loader {
         }
     }
 
-    pub fn read_static_entities<'a>(&'a self, filename: String, entities: &EntState<'a>) {
+    pub fn read_static_entities<'a>(&'a self, filename: String, entities: &mut EntState<'a>) {
 
         let file = File::open(filename).expect("Could not open file");
 
@@ -63,7 +64,7 @@ impl Loader {
                             sprite.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &self.spritesheet_desc));
                             sprite.set_position((x as f32 * w, y as f32 * h));
 
-                            entities.static_entities.borrow_mut().push(sprite);
+                            entities.static_entities.push(RefCell::new(sprite));
                         }
                         _ => {
                             panic!("ahhhhhh");
@@ -76,7 +77,7 @@ impl Loader {
         }
     }
 
-    pub fn read_dynamic_entities<'a>(&'a self, filename: String, entities: &EntState<'a>) {
+    pub fn read_dynamic_entities<'a>(&'a self, filename: String, entities: &mut EntState<'a>) {
 
         let file = File::open(filename).expect("Could not open file");
 
@@ -96,7 +97,7 @@ impl Loader {
                     sprite.set_texture_rect(&util::grab_sheet_rec(String::from("enemyFloating_1.png"), &self.spritesheet_desc));
                     sprite.set_position((x, y));
 
-                    entities.dynamic_entities.borrow_mut().push(sprite);
+                    entities.dynamic_entities.push(RefCell::new(sprite));
                 }
                 "player" => {
                     let mut sprite = Sprite::new();
@@ -104,7 +105,7 @@ impl Loader {
                     sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_up3.png"), &self.spritesheet_desc));
                     sprite.set_position((x, y));
 
-                    entities.dynamic_entities.borrow_mut().push(sprite);
+                    entities.dynamic_entities.push(RefCell::new(sprite));
                 }
                 _ => {
                     // Do nothing
