@@ -1,0 +1,9 @@
+[package]
+name = "sfml-rust"
+version = "0.1.0"
+authors = ["MitchellHansen <mitchellhansen0@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+sfml = "0.14.0"
+quick-xml = "0.13.2"
