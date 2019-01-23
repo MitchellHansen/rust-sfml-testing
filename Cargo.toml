@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 sfml = "0.14.0"
 quick-xml = "0.13.2"
+cgmath = "0.17.0"

@@ -1,19 +1,21 @@
 extern crate quick_xml;
 extern crate sfml;
+extern crate cgmath;
 
 use quick_xml::events::Event as xmlEvent;
 use quick_xml::Reader;
 use sfml::graphics::{
-    CircleShape, Color, Drawable, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape,
+    CircleShape, Color, Drawable, 
+    RectangleShape, RenderStates, 
+    RenderTarget, RenderWindow, Shape,
     Transformable,
 };
 use sfml::window::{Event, Key, Style};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::FromStr;
-use sfml::graphics::Texture;
-use sfml::graphics::Sprite;
-use sfml::graphics::IntRect;
+use sfml::graphics::{ Texture, Sprite, IntRect};
+use cgmath::{InnerSpace, Vector2 };
 
 fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
     let mut reader = Reader::from_file(filename).unwrap();
@@ -81,40 +83,53 @@ fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
 
 
 /// Our custom drawable type. It looks like a bullet.
-struct Bullet<'s> {
+struct Player<'s> {
     head: CircleShape<'s>,
-    torso: RectangleShape<'s>,
+    delta: Vector2<f32>,
+    pos: Vector2<f32>,
 }
 
-impl<'s> Bullet<'s> {
-    pub fn new() -> Self {
-        let mut head = CircleShape::new(50.0, 50);
-        head.set_position((100.0, 100.0));
-        head.set_fill_color(&Color::RED);
+impl<'s> Player<'s> { 
+   pub fn impulse(&mut self, delta_v: &Vector2<f32>) {
+        self.delta.x = delta_v.x;
+        self.delta.y = delta_v.y;
+        self.delta.normalize();
+   }
 
-        let mut torso = RectangleShape::with_size((100., 200.).into());
-        torso.set_position((100.0, 150.0));
-        torso.set_fill_color(&Color::BLUE);
+   pub fn update(&mut self, delta_t: f32) {
+        self.pos.x += self.delta.x * delta_t;
+        self.pos.y += self.delta.y * delta_t;
 
-        Self { head, torso }
+        self.delta *= 0.95;
+
+        self.head.set_position((delta.x, delta.y));
+   }
+
+   pub fn new() -> Self {
+       let mut delta = Vector2::new(0.0, 0.0);
+       let mut pos   = Vector2::new(0.0, 0.0);
+
+       let mut head = CircleShape::new(10.0, 10);
+       head.set_position((delta.x, delta.y));
+       head.set_fill_color(&Color::RED);
+
+       Self { head, delta, pos }
     }
 }
 
-// Implement the Drawable trait for our custom drawable.
-impl<'s> Drawable for Bullet<'s> {
+impl<'s> Drawable for Player<'s> {
     fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
         &'a self,
         render_target: &mut RenderTarget,
         _: RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
         render_target.draw(&self.head);
-        render_target.draw(&self.torso)
+//        render_target.draw(&self.torso)
     }
 }
 
 
 fn main() {
-
 
     let spritesheet_desc = read_spritesheet(String::from("spritesheet_complete.xml"));
     let spritesheet_text = Texture::from_file("spritesheet_complete.png")
@@ -140,20 +155,32 @@ fn main() {
         &Default::default(),
     );
 
-  //  let bullet = Bullet::new();
+    let mut player = Player::new();
 
     loop {
         while let Some(event) = window.poll_event() {
             match event {
-                Event::Closed | Event::KeyPressed {
-                    code: Key::Escape, ..
-                } => return,
+                Event::Closed => return,
+                Event::KeyPressed { code, .. } => {
+                    if code == Key::Escape {
+                        return;
+                    } else if code == Key::W {
+                        player.impulse(&Vector2::new(0.0, -1.0));
+                    } else if code == Key::A {
+                        player.impulse(&Vector2::new(-1.0, 0.0));
+                    } else if code == Key::S {
+                        player.impulse(&Vector2::new(0.0, 1.0));
+                    } else if code == Key::D {
+                        player.impulse(&Vector2::new(1.0, 0.0));
+                    }
+                }
                 _ => {}
             }
         }
 
         window.clear(&Color::BLACK);
         window.draw(&sprite);
+        window.draw(&player);
         window.display()
     }
 }
