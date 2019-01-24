@@ -1,7 +1,10 @@
+
+
 extern crate quick_xml;
 extern crate sfml;
 extern crate cgmath;
 
+use simple_stopwatch::Stopwatch;
 use quick_xml::events::Event as xmlEvent;
 use quick_xml::Reader;
 use sfml::graphics::{
@@ -16,6 +19,10 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use sfml::graphics::{ Texture, Sprite, IntRect};
 use cgmath::{InnerSpace, Vector2 };
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+use std::time::Instant;
+use std::collections::HashSet;
 
 fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
     let mut reader = Reader::from_file(filename).unwrap();
@@ -81,8 +88,39 @@ fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
     return t;
 }
 
+struct Timer {
+    stopwatch: Stopwatch,
+    lap: f32
+}
 
-/// Our custom drawable type. It looks like a bullet.
+impl Timer {
+
+    fn new() -> Timer {
+
+        let started = Stopwatch::start_new();
+        let mut time_now = started.ms();
+
+        Timer {
+            stopwatch: started,
+            lap: time_now
+        }
+    }
+
+    fn elap_time(&mut self) -> f32 {
+        self.stopwatch.ms()
+    }
+
+    fn frame_time(&mut self) -> f32 {
+
+        let now = self.stopwatch.ms();
+        let elapsed = now - self.lap;
+        self.lap = now;
+
+        return elapsed
+    }
+}
+
+
 struct Player<'s> {
     head: CircleShape<'s>,
     delta: Vector2<f32>,
@@ -91,18 +129,17 @@ struct Player<'s> {
 
 impl<'s> Player<'s> { 
    pub fn impulse(&mut self, delta_v: &Vector2<f32>) {
-        self.delta.x = delta_v.x;
-        self.delta.y = delta_v.y;
-        self.delta.normalize();
+        self.delta.x += delta_v.x;
+        self.delta.y += delta_v.y;
    }
 
    pub fn update(&mut self, delta_t: f32) {
-        self.pos.x += self.delta.x * delta_t;
-        self.pos.y += self.delta.y * delta_t;
+        self.pos.x += self.delta.x * delta_t * 1.0;
+        self.pos.y += self.delta.y * delta_t * 1.0;
 
-        self.delta *= 0.95;
+        self.delta *= 0.999;
 
-        self.head.set_position((delta.x, delta.y));
+        self.head.set_position((self.pos.x, self.pos.y));
    }
 
    pub fn new() -> Self {
@@ -124,7 +161,37 @@ impl<'s> Drawable for Player<'s> {
         _: RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
         render_target.draw(&self.head);
-//        render_target.draw(&self.torso)
+    }
+}
+
+struct Input {
+    held_keys: HashSet<Key>
+}
+
+impl Input {
+    pub fn new() -> Input {
+
+        let mut container = HashSet::new();
+
+        Input {
+            held_keys: container,
+        }
+    }
+
+    pub fn is_held(&self, key: Key) -> bool{
+        self.held_keys.contains(&key)
+    }
+
+    pub fn ingest(&mut self, event: &Event) {
+        match event {
+            Event::KeyPressed { code, .. } => {
+                self.held_keys.insert(code.clone());
+            }
+            Event::KeyReleased { code, .. } => {
+                self.held_keys.remove(code);
+            }
+            _ => {}
+        }
     }
 }
 
@@ -149,7 +216,7 @@ fn main() {
     ));
 
     let mut window = RenderWindow::new(
-        (100, 100),
+        (500, 500),
         "Custom drawable",
         Style::CLOSE,
         &Default::default(),
@@ -157,30 +224,62 @@ fn main() {
 
     let mut player = Player::new();
 
-    loop {
+    let step_size:            f32 = 0.005;
+    let mut frame_time:       f32 = 0.0;
+    let mut elapsed_time:     f32 = 0.0;
+    let mut delta_time:       f32 = 0.0;
+    let mut accumulator_time: f32 = 0.0;
+    let mut current_time:     f32 = 0.0;
+
+    let mut timer = Timer::new();
+    let mut input = Input::new();
+
+    while window.is_open() {
+
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return,
                 Event::KeyPressed { code, .. } => {
                     if code == Key::Escape {
                         return;
-                    } else if code == Key::W {
-                        player.impulse(&Vector2::new(0.0, -1.0));
-                    } else if code == Key::A {
-                        player.impulse(&Vector2::new(-1.0, 0.0));
-                    } else if code == Key::S {
-                        player.impulse(&Vector2::new(0.0, 1.0));
-                    } else if code == Key::D {
-                        player.impulse(&Vector2::new(1.0, 0.0));
                     }
                 }
                 _ => {}
             }
+            input.ingest(&event)
         }
 
+        if input.is_held(Key::W) {
+            player.impulse(&Vector2::new(0.0, -1.0));
+        }
+        if input.is_held(Key::A) {
+            player.impulse(&Vector2::new(-1.0, 0.0));
+        }
+        if input.is_held(Key::S) {
+            player.impulse(&Vector2::new(0.0, 1.0));
+        }
+        if input.is_held(Key::D) {
+            player.impulse(&Vector2::new(1.0, 0.0));
+        }
+
+        elapsed_time = timer.elap_time()/1000.0;
+        delta_time = elapsed_time - current_time;
+        current_time = elapsed_time;
+        if delta_time > 0.02 {
+            delta_time = 0.02;
+        }
+        accumulator_time += delta_time;
+
+        while (accumulator_time - step_size) >= step_size {
+            accumulator_time -= step_size;
+
+
+        }
+
+        player.update(delta_time);
         window.clear(&Color::BLACK);
-        window.draw(&sprite);
         window.draw(&player);
-        window.display()
+        window.display();
+
     }
 }
