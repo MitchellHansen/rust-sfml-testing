@@ -1,4 +1,6 @@
-
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
 
 extern crate quick_xml;
 extern crate sfml;
@@ -9,7 +11,7 @@ use quick_xml::events::Event as xmlEvent;
 use quick_xml::Reader;
 use sfml::graphics::{
     CircleShape, Color, Drawable, 
-    RectangleShape, RenderStates, 
+    RenderStates,
     RenderTarget, RenderWindow, Shape,
     Transformable,
 };
@@ -18,19 +20,14 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::str::FromStr;
 use sfml::graphics::{ Texture, Sprite, IntRect};
-use cgmath::{InnerSpace, Vector2 };
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
-use std::time::Instant;
+use cgmath::{Vector2 };
 use std::collections::HashSet;
 
 fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
     let mut reader = Reader::from_file(filename).unwrap();
     reader.trim_text(true);
 
-    let mut count = 0;
     let mut buf = Vec::new();
-
 
     let mut t : HashMap<String, HashMap<String, i32>> = HashMap::new();
 
@@ -61,14 +58,14 @@ fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
 
                         let value = match attr.value {
                             Cow::Borrowed(r) => String::from_utf8_lossy(&r),
-                            Cow::Owned(r) => break
+                            Cow::Owned(_) => break
                         };
                         name = value.to_lowercase()
                     } else {
 
                         let value = match attr.value {
                             Cow::Borrowed(r) => String::from_utf8_lossy(&r),
-                            Cow::Owned(r) => break
+                            Cow::Owned(_) => break
                         };
 
                         map_entry.insert(String::from(key), FromStr::from_str(&value[..]).expect(""));
@@ -107,7 +104,7 @@ impl Timer {
     }
 
     fn elap_time(&mut self) -> f32 {
-        self.stopwatch.ms()
+        self.stopwatch.ms()/1000.0
     }
 
     fn frame_time(&mut self) -> f32 {
@@ -223,16 +220,17 @@ fn main() {
     );
 
     let mut player = Player::new();
-
-    let step_size:            f32 = 0.005;
-    let mut frame_time:       f32 = 0.0;
-    let mut elapsed_time:     f32 = 0.0;
-    let mut delta_time:       f32 = 0.0;
-    let mut accumulator_time: f32 = 0.0;
-    let mut current_time:     f32 = 0.0;
-
     let mut timer = Timer::new();
     let mut input = Input::new();
+
+
+    let step_size:            f32 = 0.005;
+    let mut elapsed_time:     f32;
+    let mut delta_time:       f32;
+    let mut accumulator_time: f32 = 0.0;
+    let mut current_time:     f32 = timer.elap_time();
+
+
 
     while window.is_open() {
 
@@ -262,7 +260,7 @@ fn main() {
             player.impulse(&Vector2::new(1.0, 0.0));
         }
 
-        elapsed_time = timer.elap_time()/1000.0;
+        elapsed_time = timer.elap_time();
         delta_time = elapsed_time - current_time;
         current_time = elapsed_time;
         if delta_time > 0.02 {
