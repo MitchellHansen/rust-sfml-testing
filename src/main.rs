@@ -6,196 +6,26 @@ extern crate quick_xml;
 extern crate sfml;
 extern crate cgmath;
 
-use simple_stopwatch::Stopwatch;
-use quick_xml::events::Event as xmlEvent;
-use quick_xml::Reader;
+mod timer;
+mod player;
+mod input;
+mod util;
+
+use crate::player::Player;
+use crate::timer::Timer;
+use crate::input::Input;
+
 use sfml::graphics::{
-    CircleShape, Color, Drawable, 
-    RenderStates,
-    RenderTarget, RenderWindow, Shape,
-    Transformable,
+    Color, RenderTarget, RenderWindow,
+    Texture, Sprite, IntRect
 };
-use sfml::window::{Event, Key, Style};
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::str::FromStr;
-use sfml::graphics::{ Texture, Sprite, IntRect};
-use cgmath::{Vector2 };
-use std::collections::HashSet;
-
-fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
-    let mut reader = Reader::from_file(filename).unwrap();
-    reader.trim_text(true);
-
-    let mut buf = Vec::new();
-
-    let mut t : HashMap<String, HashMap<String, i32>> = HashMap::new();
-
-    loop {
-        match reader.read_event(&mut buf) {
-            Ok(xmlEvent::Start(ref e)) => {
-                match e.name() {
-                    b"TextureAtlas" => println!("attributes values: {:?}",
-                                                e.attributes().map(|a| a.unwrap().value).collect::<Vec<_>>()),
-                    _ => (),
-                }
-            },
-            Ok(xmlEvent::Empty(d)) => {
-
-                let mut map_entry: HashMap<String, i32> = HashMap::new();
-
-                //println!("{:?}", d.name());
-
-                let mut name: String = String::new();
-
-                for i in d.attributes() {
-
-                    let attr = i.expect("Couldn't grab attribute");
-
-                    let key = String::from_utf8_lossy(attr.key);
-
-                    if key == "name" {
-
-                        let value = match attr.value {
-                            Cow::Borrowed(r) => String::from_utf8_lossy(&r),
-                            Cow::Owned(_) => break
-                        };
-                        name = value.to_lowercase()
-                    } else {
-
-                        let value = match attr.value {
-                            Cow::Borrowed(r) => String::from_utf8_lossy(&r),
-                            Cow::Owned(_) => break
-                        };
-
-                        map_entry.insert(String::from(key), FromStr::from_str(&value[..]).expect(""));
-                    }
-                }
-
-                t.insert(name,map_entry);
-            },
-            Ok(xmlEvent::Eof) => break,
-            _ => (),
-        }
-
-        // if we don't keep a borrow elsewhere, we can clear the buffer to keep memory usage low
-        buf.clear();
-    }
-
-    return t;
-}
-
-struct Timer {
-    stopwatch: Stopwatch,
-    lap: f32
-}
-
-impl Timer {
-
-    fn new() -> Timer {
-
-        let started = Stopwatch::start_new();
-        let mut time_now = started.ms();
-
-        Timer {
-            stopwatch: started,
-            lap: time_now
-        }
-    }
-
-    fn elap_time(&mut self) -> f32 {
-        self.stopwatch.ms()/1000.0
-    }
-
-    fn frame_time(&mut self) -> f32 {
-
-        let now = self.stopwatch.ms();
-        let elapsed = now - self.lap;
-        self.lap = now;
-
-        return elapsed
-    }
-}
-
-
-struct Player<'s> {
-    head: CircleShape<'s>,
-    delta: Vector2<f32>,
-    pos: Vector2<f32>,
-}
-
-impl<'s> Player<'s> { 
-   pub fn impulse(&mut self, delta_v: &Vector2<f32>) {
-        self.delta.x += delta_v.x;
-        self.delta.y += delta_v.y;
-   }
-
-   pub fn update(&mut self, delta_t: f32) {
-        self.pos.x += self.delta.x * delta_t * 1.0;
-        self.pos.y += self.delta.y * delta_t * 1.0;
-
-        self.delta *= 0.999;
-
-        self.head.set_position((self.pos.x, self.pos.y));
-   }
-
-   pub fn new() -> Self {
-       let mut delta = Vector2::new(0.0, 0.0);
-       let mut pos   = Vector2::new(0.0, 0.0);
-
-       let mut head = CircleShape::new(10.0, 10);
-       head.set_position((delta.x, delta.y));
-       head.set_fill_color(&Color::RED);
-
-       Self { head, delta, pos }
-    }
-}
-
-impl<'s> Drawable for Player<'s> {
-    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
-        &'a self,
-        render_target: &mut RenderTarget,
-        _: RenderStates<'texture, 'shader, 'shader_texture>,
-    ) {
-        render_target.draw(&self.head);
-    }
-}
-
-struct Input {
-    held_keys: HashSet<Key>
-}
-
-impl Input {
-    pub fn new() -> Input {
-
-        let mut container = HashSet::new();
-
-        Input {
-            held_keys: container,
-        }
-    }
-
-    pub fn is_held(&self, key: Key) -> bool{
-        self.held_keys.contains(&key)
-    }
-
-    pub fn ingest(&mut self, event: &Event) {
-        match event {
-            Event::KeyPressed { code, .. } => {
-                self.held_keys.insert(code.clone());
-            }
-            Event::KeyReleased { code, .. } => {
-                self.held_keys.remove(code);
-            }
-            _ => {}
-        }
-    }
-}
+use sfml::window::{ Event, Key, Style};
+use sfml::system::Vector2;
 
 
 fn main() {
 
-    let spritesheet_desc = read_spritesheet(String::from("spritesheet_complete.xml"));
+    let spritesheet_desc = util::read_spritesheet(String::from("spritesheet_complete.xml"));
     let spritesheet_text = Texture::from_file("spritesheet_complete.png")
         .expect("Couldn't load texture");
 
