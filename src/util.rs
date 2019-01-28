@@ -3,8 +3,10 @@ use quick_xml::events::Event as xmlEvent;
 use std::collections::HashMap;
 use std::borrow::Cow;
 use std::str::FromStr;
+use sfml::graphics::IntRect;
 
 pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
+
     let mut reader = Reader::from_file(filename).unwrap();
     reader.trim_text(true);
 
@@ -16,8 +18,6 @@ pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32
         match reader.read_event(&mut buf) {
             Ok(xmlEvent::Start(ref e)) => {
                 match e.name() {
-                    b"TextureAtlas" => println!("attributes values: {:?}",
-                                                e.attributes().map(|a| a.unwrap().value).collect::<Vec<_>>()),
                     _ => (),
                 }
             },
@@ -41,7 +41,7 @@ pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32
                             Cow::Borrowed(r) => String::from_utf8_lossy(&r),
                             Cow::Owned(_) => break
                         };
-                        name = value.to_lowercase()
+                        name = value.to_string();
                     } else {
 
                         let value = match attr.value {
@@ -64,4 +64,15 @@ pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32
     }
 
     return t;
+}
+
+pub fn grab_sheet_rec(spritename: String, spritesheet: &HashMap<String, HashMap<String, i32>>) -> IntRect {
+
+    let block_desc = spritesheet.get(&spritename).expect("Can't load sprite");
+    IntRect::new(
+        *block_desc.get("x").unwrap(),
+        *block_desc.get("y").unwrap(),
+        *block_desc.get("width").unwrap(),
+        *block_desc.get("height").unwrap()
+    )
 }
