@@ -27,6 +27,8 @@ use sfml::system::Vector2 as sfVec2;
 use ncollide2d::bounding_volume::{self, AABB, BoundingVolumeInterferencesCollector};
 use ncollide2d::partitioning::BVT;
 use sfml::graphics::RectangleShape;
+use std::{thread, time};
+
 
 
 fn main() {
@@ -39,12 +41,17 @@ fn main() {
     let mut block_sprite = Sprite::new();
     block_sprite.set_texture(&spritesheet_text, false);
     block_sprite.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-    block_sprite.set_position((70.0, 70.0));
+    block_sprite.set_position((64.0, 64.0));
 
     let mut block_sprite2 = Sprite::new();
     block_sprite2.set_texture(&spritesheet_text, false);
     block_sprite2.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-    block_sprite2.set_position((170.0, 170.0));
+    block_sprite2.set_position((128.0, 64.0));
+
+    let mut block_sprite3 = Sprite::new();
+    block_sprite3.set_texture(&spritesheet_text, false);
+    block_sprite3.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
+    block_sprite3.set_position((192.0, 64.0));
 
     let idx_and_bounding_spheres: Vec<(&Sprite, AABB<f64>)> = vec![
         (
@@ -61,6 +68,15 @@ fn main() {
             {
                 let bounds = &block_sprite2.local_bounds();
                 let pos    = &block_sprite2.position();
+                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
+            },
+        ),
+        (
+            &block_sprite3,
+            {
+                let bounds = &block_sprite3.local_bounds();
+                let pos    = &block_sprite3.position();
                 bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
                                            na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
             },
@@ -149,6 +165,9 @@ fn main() {
         collision_sprite.set_size((collision_rect.width, collision_rect.height));
 
 
+        let ten_millis = time::Duration::from_millis(10);
+        thread::sleep(ten_millis);
+
         window.clear(&Color::BLACK);
         window.draw(&player);
         window.draw(&collision_sprite);
@@ -156,6 +175,7 @@ fn main() {
         if interferences.len() == 0 {
             window.draw(&block_sprite);
             window.draw(&block_sprite2);
+            window.draw(&block_sprite3);
         }
 
         window.display();
