@@ -150,15 +150,15 @@ fn main() {
         // intersection test
         let mut interferences = Vec::new();
         {
-            let bv = player.bounding_aabb();
+            // Get the AABB bounding box
+            let (bv, _) = player.future_bounding_aabb(delta_time);
             let mut thing = BoundingVolumeInterferencesCollector::new(&bv, &mut interferences);
             bvt.visit(&mut thing);
         }
 
+        let collision_rect = player.collision(&interferences, delta_time);
 
-        let collision_rect = player.collision(&interferences);
         player.update(delta_time);
-
 
         let mut collision_sprite = RectangleShape::new();
         collision_sprite.set_position((collision_rect.left, collision_rect.top));
