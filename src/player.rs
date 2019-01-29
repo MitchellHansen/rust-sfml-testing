@@ -97,7 +97,7 @@ impl<'s> Player<'s> {
     pub fn update(&mut self, delta_t: f32) {
         self.pos.x += self.delta.x * delta_t * 8.0;
         self.pos.y += self.delta.y * delta_t * 8.0;
-        println!("{:?}", self.delta);
+        //println!("{:?}", self.delta);
         let friction = 10.0;
         let ratio = 1.0 / (1.0 + delta_t * friction);
         self.delta *= ratio;

@@ -28,21 +28,44 @@ use ncollide2d::bounding_volume::{self, AABB, BoundingVolumeInterferencesCollect
 use ncollide2d::partitioning::BVT;
 use sfml::graphics::RectangleShape;
 use std::{thread, time};
+use std::cell::RefCell;
+use std::rc::Rc;
 
+pub struct tSprite {
+    pub value1: i32,
+    value2: f64
+}
 
+impl tSprite {
+    pub fn new() -> tSprite {
+        tSprite { value1: 0, value2: 0.0 }
+    }
+}
 
 fn main() {
 
-    // Load the spritsheet
+    // Load the spritesheet
     let spritesheet_desc = util::read_spritesheet(String::from("spritesheet_complete.xml"));
     let spritesheet_text = Texture::from_file("spritesheet_complete.png")
         .expect("Couldn't load texture");
 
-    let mut block_sprite = Sprite::new();
-    block_sprite.set_texture(&spritesheet_text, false);
-    block_sprite.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-    block_sprite.set_position((64.0, 64.0));
+    let shared_container: Rc<RefCell<Vec<tSprite>>> = Rc::new(RefCell::new(Vec::new()));
 
+    shared_container.borrow_mut().push(tSprite::new());
+
+    let mut sprite_vec = shared_container.borrow_mut();
+
+    sprite_vec.last().unwrap().value1 = 0;
+
+   // sp.set_position((0.0,0.0));
+    //println!("{:?}", sp);
+
+
+//    sp.set_texture(&spritesheet_text, false);
+//    sp.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
+//    sp.set_position((64.0, 64.0));
+
+    return;
     let mut block_sprite2 = Sprite::new();
     block_sprite2.set_texture(&spritesheet_text, false);
     block_sprite2.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
@@ -53,16 +76,16 @@ fn main() {
     block_sprite3.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
     block_sprite3.set_position((192.0, 64.0));
 
-    let idx_and_bounding_spheres: Vec<(&Sprite, AABB<f64>)> = vec![
-        (
-            &block_sprite,
-            {
-                let bounds = &block_sprite.local_bounds();
-                let pos    = &block_sprite.position();
-                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-            },
-        ),
+    let static_sprites: Vec<(&Sprite, AABB<f64>)> = vec![
+//        (
+//            &block_sprite,
+//            {
+//                let bounds = &block_sprite.local_bounds();
+//                let pos    = &block_sprite.position();
+//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
+//            },
+//        ),
         (
             &block_sprite2,
             {
@@ -83,7 +106,7 @@ fn main() {
         ),
     ];
 
-    let bvt = BVT::new_balanced(idx_and_bounding_spheres);
+    let bvt = BVT::new_balanced(static_sprites);
 
     let mut sprite = Sprite::new();
     sprite.set_texture(&spritesheet_text, false);
@@ -173,7 +196,7 @@ fn main() {
         window.draw(&collision_sprite);
 
         if interferences.len() == 0 {
-            window.draw(&block_sprite);
+         //   window.draw(&block_sprite);
             window.draw(&block_sprite2);
             window.draw(&block_sprite3);
         }
