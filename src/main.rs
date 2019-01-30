@@ -10,10 +10,12 @@ mod timer;
 mod player;
 mod input;
 mod util;
+mod loader;
 
 use crate::player::Player;
 use crate::timer::Timer;
 use crate::input::Input;
+use crate::loader::Loader;
 
 extern crate nalgebra as na;
 extern crate ncollide2d;
@@ -31,50 +33,36 @@ use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub struct tSprite {
-    pub value1: i32,
-    value2: f64
+
+pub struct EntState<'a> {
+    dynamic_entities: Rc<RefCell<Vec< Sprite<'a> >>>,
+    static_entities : Rc<RefCell<Vec< Sprite<'a> >>>,
 }
 
-impl tSprite {
-    pub fn new() -> tSprite {
-        tSprite { value1: 0, value2: 0.0 }
-    }
-}
 
 fn main() {
 
-    // Load the spritesheet
-    let spritesheet_desc = util::read_spritesheet(String::from("spritesheet_complete.xml"));
-    let spritesheet_text = Texture::from_file("spritesheet_complete.png")
-        .expect("Couldn't load texture");
+    let loader = Loader::new();
 
-    let shared_container: Rc<RefCell<Vec<tSprite>>> = Rc::new(RefCell::new(Vec::new()));
+    let mut state = EntState {
+        dynamic_entities: Rc::new(RefCell::new(Vec::new())),
+        static_entities : Rc::new(RefCell::new(Vec::new()))
+    };
 
-    shared_container.borrow_mut().push(tSprite::new());
+    loader.read_static_entities(String::from("static_entities.txt"), &state);
 
-    let mut sprite_vec = shared_container.borrow_mut();
 
-    sprite_vec.last().unwrap().value1 = 0;
-
-   // sp.set_position((0.0,0.0));
-    //println!("{:?}", sp);
-
+   state.dynamic_entities.borrow_mut().push(Sprite::new());
 
 //    sp.set_texture(&spritesheet_text, false);
 //    sp.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
 //    sp.set_position((64.0, 64.0));
 
     return;
-    let mut block_sprite2 = Sprite::new();
-    block_sprite2.set_texture(&spritesheet_text, false);
-    block_sprite2.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-    block_sprite2.set_position((128.0, 64.0));
-
-    let mut block_sprite3 = Sprite::new();
-    block_sprite3.set_texture(&spritesheet_text, false);
-    block_sprite3.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
-    block_sprite3.set_position((192.0, 64.0));
+//    let mut block_sprite2 = Sprite::new();
+//    block_sprite2.set_texture(&spritesheet_text, false);
+//    block_sprite2.set_texture_rect(&util::grab_sheet_rec(String::from("blockBrown.png"), &spritesheet_desc));
+//    block_sprite2.set_position((128.0, 64.0));
 
     let static_sprites: Vec<(&Sprite, AABB<f64>)> = vec![
 //        (
@@ -86,31 +74,31 @@ fn main() {
 //                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
 //            },
 //        ),
-        (
-            &block_sprite2,
-            {
-                let bounds = &block_sprite2.local_bounds();
-                let pos    = &block_sprite2.position();
-                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-            },
-        ),
-        (
-            &block_sprite3,
-            {
-                let bounds = &block_sprite3.local_bounds();
-                let pos    = &block_sprite3.position();
-                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-            },
-        ),
+//        (
+//            &block_sprite2,
+//            {
+//                let bounds = &block_sprite2.local_bounds();
+//                let pos    = &block_sprite2.position();
+//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
+//            },
+//        ),
+//        (
+//            &block_sprite3,
+//            {
+//                let bounds = &block_sprite3.local_bounds();
+//                let pos    = &block_sprite3.position();
+//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
+//            },
+//        ),
     ];
 
     let bvt = BVT::new_balanced(static_sprites);
 
     let mut sprite = Sprite::new();
-    sprite.set_texture(&spritesheet_text, false);
-    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_stand.png"), &spritesheet_desc));
+//    sprite.set_texture(&spritesheet_text, false);
+//    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_stand.png"), &spritesheet_desc));
 
     let mut window = RenderWindow::new(
         (500, 500),
@@ -197,11 +185,12 @@ fn main() {
 
         if interferences.len() == 0 {
          //   window.draw(&block_sprite);
-            window.draw(&block_sprite2);
-            window.draw(&block_sprite3);
+//            window.draw(&block_sprite2);
+//            window.draw(&block_sprite3);
         }
 
         window.display();
 
     }
+
 }

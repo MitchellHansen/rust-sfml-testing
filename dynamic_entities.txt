@@ -1,0 +1,4 @@
+player 200 200
+enemy 100 100
+enemy 150 100
+enemy 200 100

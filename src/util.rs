@@ -7,6 +7,8 @@ use sfml::graphics::IntRect;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
+use crate::EntState;
+use sfml::graphics::Sprite;
 
 pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
 
@@ -78,11 +80,4 @@ pub fn grab_sheet_rec(spritename: String, spritesheet: &HashMap<String, HashMap<
         *block_desc.get("width").unwrap(),
         *block_desc.get("height").unwrap()
     )
-}
-
-pub fn read_map(filename: String) {
-    let file = File::open(filename).expect("Could not open file");
-    for line in BufReader::new(file).lines() {
-        println!("{:?}", line);
-    }
 }
