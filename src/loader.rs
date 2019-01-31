@@ -24,7 +24,6 @@ impl Loader {
         }
     }
 
-
     pub fn read_static_entities<'a>(&'a self, filename: String, entities: &EntState<'a>) {
 
         let file = File::open(filename).expect("Could not open file");
@@ -33,7 +32,7 @@ impl Loader {
         let mut w: f32 = 0.0;
         let mut h: f32 = 0.0;
 
-        let mut x: i32 = 0;
+        let mut x: i32;
         let mut y: i32 = 0;
 
 
@@ -77,14 +76,40 @@ impl Loader {
         }
     }
 
-    pub fn read_dynamic_entities(filename: String, entities: &EntState) {
+    pub fn read_dynamic_entities<'a>(&'a self, filename: String, entities: &EntState<'a>) {
+
         let file = File::open(filename).expect("Could not open file");
+
         for line in BufReader::new(file).lines() {
 
+            let val = line.unwrap();
+            let arr : Vec<&str> = val.split_whitespace().collect();
+
+            let e = arr.get(0).unwrap();
+            let x = arr.get(1).unwrap().parse::<f32>().unwrap();
+            let y = arr.get(2).unwrap().parse::<f32>().unwrap();
+
+            match *e {
+                "enemy" => {
+                    let mut sprite = Sprite::new();
+                    sprite.set_texture(&self.spritesheet_text, false);
+                    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("enemyFloating_1.png"), &self.spritesheet_desc));
+                    sprite.set_position((x, y));
+
+                    entities.dynamic_entities.borrow_mut().push(sprite);
+                }
+                "player" => {
+                    let mut sprite = Sprite::new();
+                    sprite.set_texture(&self.spritesheet_text, false);
+                    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_up3.png"), &self.spritesheet_desc));
+                    sprite.set_position((x, y));
+
+                    entities.dynamic_entities.borrow_mut().push(sprite);
+                }
+                _ => {
+                    // Do nothing
+                }
+            }
         }
-
-        let mut sprite1 = Sprite::new();
-        entities.dynamic_entities.borrow_mut().push(sprite1);
     }
-
 }

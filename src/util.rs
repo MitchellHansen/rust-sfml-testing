@@ -4,11 +4,6 @@ use std::collections::HashMap;
 use std::borrow::Cow;
 use std::str::FromStr;
 use sfml::graphics::IntRect;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
-use crate::EntState;
-use sfml::graphics::Sprite;
 
 pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32>> {
 
@@ -29,8 +24,6 @@ pub fn read_spritesheet(filename: String) -> HashMap<String, HashMap<String, i32
             Ok(xmlEvent::Empty(d)) => {
 
                 let mut map_entry: HashMap<String, i32> = HashMap::new();
-
-                //println!("{:?}", d.name());
 
                 let mut name: String = String::new();
 

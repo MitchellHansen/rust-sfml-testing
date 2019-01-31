@@ -22,11 +22,11 @@ extern crate ncollide2d;
 
 use sfml::graphics::{
     Color, RenderTarget, RenderWindow,
-    Texture, Sprite, Transformable
+    Sprite, Transformable
 };
 use sfml::window::{ Event, Key, Style};
 use sfml::system::Vector2 as sfVec2;
-use ncollide2d::bounding_volume::{self, AABB, BoundingVolumeInterferencesCollector};
+use ncollide2d::bounding_volume::{AABB, BoundingVolumeInterferencesCollector};
 use ncollide2d::partitioning::BVT;
 use sfml::graphics::RectangleShape;
 use std::{thread, time};
@@ -42,18 +42,15 @@ pub struct EntState<'a> {
 
 fn main() {
 
-
-
     let loader = Loader::new();
     let mut state = EntState {
         dynamic_entities: Rc::new(RefCell::new(Vec::new())),
         static_entities: Rc::new(RefCell::new(Vec::new()))
     };
-    {
 
-        let mut state_borrow = &state;
-        loader.read_static_entities(String::from("static_entities.txt"), state_borrow);
-    }
+    loader.read_static_entities(String::from("static_entities.txt"), &state);
+    loader.read_dynamic_entities(String::from("dynamic_entities.txt"), &state);
+
 
     let static_sprites: Vec<(&Sprite, AABB<f64>)> = vec![
 //        (
@@ -65,31 +62,9 @@ fn main() {
 //                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
 //            },
 //        ),
-//        (
-//            &block_sprite2,
-//            {
-//                let bounds = &block_sprite2.local_bounds();
-//                let pos    = &block_sprite2.position();
-//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-//            },
-//        ),
-//        (
-//            &block_sprite3,
-//            {
-//                let bounds = &block_sprite3.local_bounds();
-//                let pos    = &block_sprite3.position();
-//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-//            },
-//        ),
     ];
 
     let bvt = BVT::new_balanced(static_sprites);
-
-    let mut sprite = Sprite::new();
-//    sprite.set_texture(&spritesheet_text, false);
-//    sprite.set_texture_rect(&util::grab_sheet_rec(String::from("playerBlue_stand.png"), &spritesheet_desc));
 
     let mut window = RenderWindow::new(
         (512, 512),
@@ -179,10 +154,8 @@ fn main() {
             window.draw(ent);
         }
 
-        if interferences.len() == 0 {
-         //   window.draw(&block_sprite);
-//            window.draw(&block_sprite2);
-//            window.draw(&block_sprite3);
+        for ent in state.dynamic_entities.borrow().iter() {
+            window.draw(ent);
         }
 
         window.display();
