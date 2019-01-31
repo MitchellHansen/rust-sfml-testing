@@ -32,11 +32,16 @@ use sfml::graphics::RectangleShape;
 use std::{thread, time};
 use std::cell::RefCell;
 use std::rc::Rc;
+use ncollide2d::bounding_volume;
 
 
 pub struct EntState<'a> {
+    dynamic_bvh     : Option<BVT<&'a Sprite<'a>, AABB<f64>>>,
     dynamic_entities: Rc<RefCell<Vec< Sprite<'a> >>>,
+
+    static_bvh      : Option<BVT<&'a Sprite<'a>, AABB<f64>>>,
     static_entities : Rc<RefCell<Vec< Sprite<'a> >>>,
+    player          : Player<'a>,
 }
 
 
@@ -44,27 +49,38 @@ fn main() {
 
     let loader = Loader::new();
     let mut state = EntState {
+        dynamic_bvh: None,
         dynamic_entities: Rc::new(RefCell::new(Vec::new())),
-        static_entities: Rc::new(RefCell::new(Vec::new()))
+        static_bvh: None,
+        static_entities: Rc::new(RefCell::new(Vec::new())),
+        player: Player::new(),
     };
 
     loader.read_static_entities(String::from("static_entities.txt"), &state);
     loader.read_dynamic_entities(String::from("dynamic_entities.txt"), &state);
 
+    let mut dynamic_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
+    let dyna = state.dynamic_entities.borrow();
+    for i in dyna.iter() {
+        let bounds = &i.local_bounds();
+        let pos    = &i.position();
+        let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+            na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
 
-    let static_sprites: Vec<(&Sprite, AABB<f64>)> = vec![
-//        (
-//            &block_sprite,
-//            {
-//                let bounds = &block_sprite.local_bounds();
-//                let pos    = &block_sprite.position();
-//                bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-//                                           na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64))
-//            },
-//        ),
-    ];
+        dynamic_sprites.push((i, volume));
+    }
+    state.dynamic_bvh = Some(BVT::new_balanced(dynamic_sprites));
 
-    let bvt = BVT::new_balanced(static_sprites);
+
+    let mut static_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
+    for i in state.static_entities.borrow_mut().iter() {
+        let bounds = &i.local_bounds();
+        let pos    = &i.position();
+        let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+                                                na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
+        static_sprites.push((i, volume));
+    }
+    state.static_bvh = Some(BVT::new_balanced(static_sprites));
 
     let mut window = RenderWindow::new(
         (512, 512),
@@ -124,31 +140,26 @@ fn main() {
             accumulator_time -= step_size;
         }
 
-        // intersection test
-        let mut interferences = Vec::new();
-        {
-            // Get the AABB bounding box
-            let (bv, _) = player.future_bounding_aabb(delta_time);
-            let mut thing = BoundingVolumeInterferencesCollector::new(&bv, &mut interferences);
-            bvt.visit(&mut thing);
-        }
-
-        let collision_rect = player.collision(&interferences, delta_time);
+//        // intersection test
+//        let mut interferences = Vec::new();
+//        {
+//            // Get the AABB bounding box
+//            let (bv, _) = player.future_bounding_aabb(delta_time);
+//            let mut thing = BoundingVolumeInterferencesCollector::new(&bv, &mut interferences);
+//            bvt.visit(&mut thing);
+//        }
+//
+//        let collision_rect = player.collision(&interferences, delta_time);
 
         player.update(delta_time);
-
-        let mut collision_sprite = RectangleShape::new();
-        collision_sprite.set_position((collision_rect.left, collision_rect.top));
-        collision_sprite.set_size((collision_rect.width, collision_rect.height));
-
-
-        let ten_millis = time::Duration::from_millis(10);
-        thread::sleep(ten_millis);
+//
+//        let mut collision_sprite = RectangleShape::new();
+//        collision_sprite.set_position((collision_rect.left, collision_rect.top));
+//        collision_sprite.set_size((collision_rect.width, collision_rect.height));
 
         window.clear(&Color::BLACK);
         window.draw(&player);
-        window.draw(&collision_sprite);
-
+        //window.draw(&collision_sprite);
 
         for ent in state.static_entities.borrow().iter() {
             window.draw(ent);
