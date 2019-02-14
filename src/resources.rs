@@ -12,7 +12,8 @@ impl Resources {
         Resources {
 
             spritesheet_desc: util::read_spritesheet(String::from("spritesheet_complete.xml")),
-            spritesheet_text: Texture::from_file("spritesheet_complete.png").expect("Couldn't load texture")
+            spritesheet_text: Texture::from_file("spritesheet_complete.png")
+                .expect("Couldn't load texture")
         }
     }
 }

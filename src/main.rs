@@ -33,11 +33,26 @@ use sfml::system::Vector2 as sfVec2;
 
 fn main() {
 
+
+    // Resources
+    //  Holds textures and their descriptions
+
+    // Collision
+    //  Holds the BVT which has a reference or owns the Sprite
+
+    // EntState
+    // Holds the entities and the player
+
+    // Entities (Sprites) have a texture so Resources must live longer
+    // Collision has references to sprites so EntState must live longer
+
+    // Resources { EntState { Collision } } }
+
     let mut resources = Resources::new();
     let mut collision = Collision::new();
-    let mut state = EntState::new();
+    let mut state     = EntState::new();
 
-    state.read_static_entities(String::from("static_entities.txt"), &resources);
+   // state.read_static_entities(String::from("static_entities.txt"), &resources);
     //state.read_static_entities(String::from("static_entities.txt"), &resources);
     //state.read_dynamic_entities(String::from("dynamic_entities.txt"));
 

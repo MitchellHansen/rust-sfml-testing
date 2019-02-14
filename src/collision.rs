@@ -22,19 +22,19 @@ impl<'a> Collision<'a> {
 
     pub fn gen_bvt(mut self, entity_state: &'a EntState<'a>) {
 
-        let mut dynamic_sprites: Box<Vec<(&'a Sprite<'a>, AABB<f64>)>> = Box::new(Vec::new());
-        {
-            let vec = entity_state.dynamic_entities.borrow();
-            for i in vec.iter() {
-                let bounds = i.global_bounds();
-                let pos = i.position();
-                let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
-                                                        na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
-
-                dynamic_sprites.push((i, volume));
-            }
-        }
-        self.dynamic_bvh = Some(BVT::new_balanced(dynamic_sprites));
+//        let mut dynamic_sprites: Vec<(&'a Sprite<'a>, AABB<f64>)>= (Vec::new());
+//        {
+//            let vec = entity_state.dynamic_entities.borrow();
+//            for i in vec.iter() {
+//                let bounds = i.global_bounds();
+//                let pos = i.position();
+//                let volume = bounding_volume::AABB::new(na::Point2::new(pos.x as f64, pos.y as f64),
+//                                                        na::Point2::new((pos.x + bounds.width) as f64, (pos.y + bounds.width) as f64));
+//
+//                dynamic_sprites.push((i, volume));
+//            }
+//        }
+//        self.dynamic_bvh = Some(BVT::new_balanced(dynamic_sprites));
 
 //        let mut static_sprites: Vec<(&Sprite, AABB<f64>)> = Vec::new();
 //        {
